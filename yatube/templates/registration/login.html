@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% comment %}форма входа, пользователь вводит username и пароль. 
+#После отправки форма проверяется, и если пользователь с таким именем и паролем 
+#найден, то он авторизуется и перенаправляется на главную страницу
+{% endcomment %}
+
+
+{% block title %}Login{% endblock %}
+{% block content %}
+{% load user_filters %}
+
+<div class="row justify-content-center">
+  <div class="col-md-8 p-5">
+    <div class="card">
+      <div class="card-header">Log in to the site</div>
+      <div class="card-body">
+        {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+          The username and password do not match. Enter the correct data.
+        </div>
+        {% endif %}
+
+        {% if next %}       
+            <div class="alert alert-info" role="alert">
+              You have accessed a page that can only be accessed by logged-in users.<br>
+              Please log in.
+            </div>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+              Please log in.
+            </div>
+        {% endif %}
+
+
+        <form method="post" action="{% url 'login' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}">
+          <div class="form-group row">
+              <label for="{{ form.username.id_for_label }}" class="col-md-4 col-form-label text-md-right">Login/Username</label>
+              <div class="col-md-6">
+                  {{ form.username|addclass:"form-control" }}
+              </div>
+          </div>
+
+          <div class="form-group row">
+              <label for="{{ form.password.id_for_label }}" class="col-md-4 col-form-label text-md-right">Password</label>
+              <div class="col-md-6">
+                  {{ form.password|addclass:"form-control" }}
+              </div>
+          </div>
+
+          <div class="col-md-6 offset-md-4">              
+              <button type="submit" class="btn btn-primary">
+                Login
+              </button>
+              <a href="{% url 'password_reset' %}" class="btn btn-link">
+                Forgot your password?
+              </a>
+          </div>
+        </form>
+      </div> <!-- card body -->
+    </div> <!-- card -->
+  </div> <!-- col -->
+</div> <!-- row -->
+
+{% endblock %}

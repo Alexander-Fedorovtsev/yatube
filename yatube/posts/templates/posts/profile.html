@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+
+{% block content %}
+<main role="main" class="container">
+    <div class="row">
+      {% include "posts/author_info.html" %}
+      <div class="col-md-9">
+        {% for post in page %}
+          {% include "posts/post_item.html" with post=post %}
+        {% endfor %}
+          <!-- Остальные посты -->
+       {% include 'paginator.html' %}
+       </div>
+    </div>
+  </main>
+{% endblock %}

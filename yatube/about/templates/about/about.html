@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}About author{% endblock %}
+{% block content %}
+{% load user_filters %}
+{% load static %}
+  <main role="main" class="container">
+    <div class="row">
+      <!-- Левый вспомогательный блок -->
+      <div class="col-md-3 mb-3 mt-1">
+        <div class="card">
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">
+                <div class="h3">
+                  About author
+                </div> 
+              </li>
+              <li class="list-group-item">
+                <div class="h6 text-muted">
+                  <img src="{% static 'cat.JPG' %}" width="110" height="151" alt="My image"/>
+                </div>
+              </li>
+            </ul>                                               
+          </div>                    
+        </div>                
+      </div>
+      <!-- Тело страницы -->
+      <div class="col-md-9">
+        <div class="card-body">                    
+          <div class="card-text">
+            <p>
+            Hello!!! <br>
+            My name is Svetlana <br>
+            I am studying a Python course at Yandex Practicum. <br>
+            In the photo, my cat is watching what is happening in the house from the refrigerator.
+          </p>
+            
+          </div>                    
+        </div>                
+      </div>            
+    </div>        
+  </main>
+{% endblock %}

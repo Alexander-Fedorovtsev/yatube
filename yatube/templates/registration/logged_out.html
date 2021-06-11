@@ -1,0 +1,21 @@
+"""в навигации сайта мы показываем ссылку на страницу «Выйти». 
+Когда пользователь переходит на эту страницу, то он разлогинивается и ему 
+показывается прощальная страница
+"""
+
+{% extends "base.html" %}
+{% block title %}You are logged out{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 p-5">
+    <div class="card">
+      <div class="card-header">You are logged out/div>
+      <div class="card-body">
+        <p>You are logged out of your account. We are waiting for you again!</p>
+      </div> <!-- card body -->
+    </div> <!-- card -->
+  </div> <!-- col -->
+</div> <!-- row -->
+
+{% endblock %}

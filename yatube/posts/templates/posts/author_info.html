@@ -1,0 +1,43 @@
+<div class="col-md-3 mb-3 mt-1">
+    <div class="card">
+      <div class="card-body">
+        <div class="h2">
+           {{ author.get_full_name }}
+           <!--Лев Толстой-->
+        </div>
+        <div class="h3 text-muted">
+           @{{ username }}
+           <!--@leo-->
+         </div>
+       </div>
+       <ul class="list-group list-group-flush">
+         <li class="list-group-item">
+           <div class="h6 text-muted">
+             Subscribers: {{ subscribers }} <br />
+             Signed: {{ signed }}
+            </div>
+         </li>
+         <li class="list-group-item">
+            <div class="h6 text-muted">
+              Posts: {{ posts_count }}
+              <!--Записей: 36-->
+             </div>
+          </li>
+          <li class="list-group-item">
+            {% if following %}
+              <a
+                class="btn btn-lg btn-light"
+                href="{% url 'profile_unfollow' username %}" role="button">
+                Unsubscribe
+              </a>
+            {% else %}
+              <a
+                class="btn btn-lg btn-primary"
+                href="{% url 'profile_follow' username %}" role="button">
+                Subscribe
+              </a>
+            {% endif %}
+          </li> 
+        </ul>
+      </div>
+   </div>

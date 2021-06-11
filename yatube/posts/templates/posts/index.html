@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+{% load cache %}
+{% block title %}Latest updates on the site{% endblock %}
+{% block header %}Latest updates on the site{% endblock %}
+{% block content %}
+
+  <div class="container">
+    {% include "posts/menu.html" with index=True %}
+    {% cache 20 index_page using key page_number%}
+      {% for post in page %}
+        {% include "posts/post_item.html" with post=post %}
+      {% endfor %}
+    {% endcache %}
+  </div>
+  {% include "paginator.html" with items=page paginator=paginator%}
+{% endblock %} 
