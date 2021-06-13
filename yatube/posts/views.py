@@ -14,12 +14,13 @@ User = get_user_model()
 
 
 def _all_posts(request, post_list):
+    """Функция для получения страницы с постами.
+    """
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return {
         'page': page,
-        'page_number': page_number,
     }
 
 
@@ -28,10 +29,14 @@ def index(request):
     """View-функция для главной страницы проекта.
     """
     post_list = Post.objects.all()
+    page_number = request.GET.get('page')
     return render(
         request,
         'posts/index.html',
-        _all_posts(request, post_list),
+        {
+            **_all_posts(request, post_list),
+            'page_number': page_number,
+        },
     )
 
 
@@ -44,8 +49,8 @@ def group_posts(request, slug: str):
         request,
         'posts/group.html',
         {
+            **_all_posts(request, group.posts.all()),
             'group': group,
-            **_all_posts(request, group.posts.all())
         },
     )
 
@@ -81,21 +86,22 @@ def profile(request, username):
     """
     author_info = _get_author_info(username)
     post_list = author_info['author'].posts.all()
+    context = {
+        **author_info,
+        **_all_posts(request, post_list),
+    }
+
     if not request.user.is_authenticated:
         return render(
             request,
             'posts/profile.html',
-            {
-                **author_info,
-                **_all_posts(request, post_list),
-            },
+            context,
         )
     return render(
         request,
         'posts/profile.html',
         {
-            **author_info,
-            **_all_posts(request, post_list),
+            **context,
             'following': _check_follow(request, author_info['author']),
         },
     )
@@ -123,7 +129,7 @@ def post_view(request, username, post_id):
             {
                 **context,
                 'following': _check_follow(request, author_info['author']),
-            }
+            },
         )
     return render(
         request,
