@@ -124,13 +124,6 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         help_text='Enter user author when you subscribe',
     )
-    # date_follow= models.DateField(
-    #     'Data and time of following',
-    #     auto_now_add=True,
-    # )
-
-    # class Meta:
-    #     ordering = ('-date_follow',)
 
     def __str__(self):
         return f'{self.user.username} follow to {self.author.username}'

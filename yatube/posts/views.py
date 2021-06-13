@@ -31,7 +31,7 @@ def index(request):
     return render(
         request,
         'posts/index.html',
-        _all_posts(request, post_list)
+        _all_posts(request, post_list),
     )
 
 
@@ -40,10 +40,14 @@ def group_posts(request, slug: str):
     """View-функция для страницы сообщества.
     """
     group = get_object_or_404(Group, slug=slug)
-    paginator = Paginator(group.posts.all(), 10)
-    page_number = request.GET.get('page')
-    page = paginator.get_page(page_number)
-    return render(request, 'posts/group.html', {'group': group, 'page': page})
+    return render(
+        request,
+        'posts/group.html',
+        {
+            'group': group,
+            **_all_posts(request, group.posts.all())
+        },
+    )
 
 
 def _get_author_info(username):
@@ -62,34 +66,38 @@ def _get_author_info(username):
     }
 
 
+def _check_follow(request, user_author):
+    """Функция для проверки подписки на автора.
+    """
+    if user_author.following.filter(user=request.user).exists():
+        return True
+    else:
+        return False
+
+
 @require_GET
 def profile(request, username):
     """View-функция для страницы профайла пользователя.
     """
     author_info = _get_author_info(username)
-    post_list = Paginator(author_info['author'].posts.all(), 10)
-    page_number = request.GET.get('page')
-    page = post_list.get_page(page_number)
+    post_list = author_info['author'].posts.all()
     if not request.user.is_authenticated:
-        context = {
-            **author_info,
-            'page': page,
-        }
-    else:
-        if (author_info['author'].following.filter(user=request.user).count()
-                != 0):
-            following = True
-        else:
-            following = False
-        context = {
-            **author_info,
-            'page': page,
-            'following': following,
-        }
+        return render(
+            request,
+            'posts/profile.html',
+            {
+                **author_info,
+                **_all_posts(request, post_list),
+            },
+        )
     return render(
         request,
         'posts/profile.html',
-        context,
+        {
+            **author_info,
+            **_all_posts(request, post_list),
+            'following': _check_follow(request, author_info['author']),
+        },
     )
 
 
@@ -98,7 +106,7 @@ def post_view(request, username, post_id):
     """View-функция для страницы поста.
     """
     author_info = _get_author_info(username)
-    post = get_object_or_404(author_info['author'].posts, id=post_id)
+    post = get_object_or_404(Post, id=post_id)
     author_info['post'] = post
     form = CommentForm(request.POST or None)
     comments = post.comments.all()
@@ -108,6 +116,15 @@ def post_view(request, username, post_id):
         'form': form,
         'comments': comments,
     }
+    if request.user.is_authenticated:
+        return render(
+            request,
+            'posts/post.html',
+            {
+                **context,
+                'following': _check_follow(request, author_info['author']),
+            }
+        )
     return render(
         request,
         'posts/post.html',
@@ -123,7 +140,13 @@ def new_post(request):
     """
     form = PostForm(request.POST or None)
     if not form.is_valid():
-        return render(request, 'posts/new_post.html', {'form': form, })
+        return render(
+            request,
+            'posts/new_post.html',
+            {
+                'form': form,
+            },
+        )
     new_post = form.save(commit=False)
     new_post.author = request.user
     new_post.save()
@@ -137,7 +160,11 @@ def post_edit(request, username, post_id):
     """
     author = get_object_or_404(User, username=username)
     edit_post = get_object_or_404(Post, pk=post_id)
-    path_post = redirect('post', username=username, post_id=post_id)
+    path_post = redirect(
+        'post',
+        username=username,
+        post_id=post_id
+    )
     if request.user != author:
         return path_post
     form = PostForm(
@@ -148,31 +175,33 @@ def post_edit(request, username, post_id):
     if form.is_valid():
         edit_post.save()
         return path_post
-
     return render(
         request,
         'posts/edit_post.html',
         {
             'form': form,
             'post': edit_post,
-        }
+        },
     )
 
 
 def page_not_found(request, exception):
-    # Переменная exception содержит отладочную информацию,
-    # выводить её в шаблон пользователской страницы 404 мы не станем
-
     return render(
         request,
         'misc/404.html',
-        {'path': request.path},
-        status=404
+        {
+            'path': request.path
+        },
+        status=404,
     )
 
 
 def server_error(request):
-    return render(request, 'misc/500.html', status=500)
+    return render(
+        request,
+        'misc/500.html',
+        status=500,
+    )
 
 
 @require_http_methods(["GET", "POST"])
@@ -184,12 +213,16 @@ def add_comment(request, username, post_id):
     get_object_or_404(User, username=username)
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST or None)
-    if form.is_valid() and request.user.is_authenticated:
+    if form.is_valid():
         new_comment = form.save(commit=False)
         new_comment.author = request.user
         new_comment.post = post
         new_comment.save()
-    return redirect('post', username=username, post_id=post_id)
+    return redirect(
+        'post',
+        username=username,
+        post_id=post_id,
+    )
 
 
 @require_GET
@@ -199,22 +232,27 @@ def follow_index(request):
     которых подписан текущий пользователь. Видна только авторизованным
     пользователям.
     """
-    post_list = Post.objects.filter(author__following__user=request.user)
+    post_list = Post.objects.prefetch_related('author').filter(
+        author__following__user=request.user)
     return render(
         request,
         'posts/follow.html',
-        _all_posts(request, post_list)
+        _all_posts(request, post_list),
     )
 
 
 def _redirect_follow(request, username, action):
-    get_object_or_404(User.objects, username=username)
+    """Функция для реализации подписики и отписки от автора.
+    """
     author_follow = get_object_or_404(User, username=username)
     user_follower = get_object_or_404(User, username=request.user.username)
-    path_to_follow = redirect('profile', username=username)
+    path_to_follow = redirect(
+        'profile',
+        username=username,
+    )
     if author_follow == user_follower:
         return path_to_follow
-    check_following = author_follow.following.filter(user=user_follower)
+    check_following = _check_follow(request, author_follow)
     if not check_following and action == 'add':
         Follow.objects.create(
             author=author_follow,

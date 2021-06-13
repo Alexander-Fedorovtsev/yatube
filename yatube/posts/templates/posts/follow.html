@@ -1,5 +1,15 @@
-{% extends "posts/index.html" %}
-
+{% extends "base.html" %}
+{% load thumbnail %}
+{% load cache %}
 {% block title %}Latest updates favourites authors{% endblock %}
 {% block header %}Latest updates favourites authors{% endblock %}
+{% block content %}
 
+  <div class="container">
+    {% include "posts/menu.html" with index=True %}
+      {% for post in page %}
+        {% include "posts/post_item.html" with post=post %}
+      {% endfor %}
+  </div>
+  {% include "paginator.html" with items=page paginator=paginator%}
+{% endblock %} 
