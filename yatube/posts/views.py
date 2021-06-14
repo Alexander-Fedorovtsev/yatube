@@ -71,6 +71,7 @@ def _get_author_info(username):
     }
 
 
+@login_required
 def _check_follow(request, user_author):
     """Функция для проверки подписки на автора.
     """
@@ -144,7 +145,7 @@ def new_post(request):
     """View-функция для создания нового поста. Видна только авторизованным
     пользователям.
     """
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None, request.FILES or None)
     if not form.is_valid():
         return render(
             request,

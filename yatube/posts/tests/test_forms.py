@@ -27,7 +27,6 @@ class PostsFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
         cls.author = User.objects.create_user(username='TestPostUser')
         cls.test_group = Group.objects.create(
             title='test_group_title',
@@ -45,6 +44,10 @@ class PostsFormTests(TestCase):
         # Метод shutil.rmtree удаляет директорию и всё её содержимое
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
+
+    def tearDown(self):
+        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        return super().tearDown()
 
     def setUp(self):
         self.guest_client = Client()
@@ -69,6 +72,11 @@ class PostsFormTests(TestCase):
             content=small_gif,
             content_type='image/gif'
         )
+        uploaded_another = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
         form_group = (
             (
                 {
@@ -86,17 +94,17 @@ class PostsFormTests(TestCase):
             ),
             (
                 {
+                    'text': 'test text without group and with image',
+                    'image': uploaded_another,
+                },
+                'без указания группы с изображением ',
+            ),
+            (
+                {
                     'text': 'test text with group, no image',
                     'group': self.test_group.id,
                 },
                 'с указанием группы и без изображения ',
-            ),
-            (
-                {
-                    'text': 'test text without group and with image',
-                    'image': uploaded,
-                },
-                'без указания группы с изображением ',
             ),
         )
 
