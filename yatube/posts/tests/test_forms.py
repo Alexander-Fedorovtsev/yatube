@@ -45,10 +45,6 @@ class PostsFormTests(TestCase):
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
 
-    def tearDown(self):
-        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-        return super().tearDown()
-
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
@@ -73,7 +69,7 @@ class PostsFormTests(TestCase):
             content_type='image/gif'
         )
         uploaded_another = SimpleUploadedFile(
-            name='small.gif',
+            name='small_another.gif',
             content=small_gif,
             content_type='image/gif'
         )
@@ -116,17 +112,29 @@ class PostsFormTests(TestCase):
                     data=form,
                     follow=True,
                 )
+                expected_post = {
+                    'author': self.author,
+                    'text': form['text'],
+                    'image': '',
+                }
                 if 'image' in form:
-                    self.assertIsNotNone(
-                        'Post.objects.first().image',
-                        'Изображение не добавлено в пост')
-                    del form['image']
+                    expected_post = {
+                        **expected_post,
+                        'image': 'posts/' + form['image'].name,
+                    }
+                post = Post.objects.get(
+                    text=form['text'],
+                    author=self.author
+                )
+                post_fields = {
+                    'author': self.author,
+                    'text': post.text,
+                    'image': post.image.name,
+                }
 
-                self.assertTrue(
-                    Post.objects.filter(
-                        **form,
-                        author=self.author,
-                    ).exists(),
+                self.assertDictEqual(
+                    post_fields,
+                    expected_post,
                     f'Создание нового поста {with_group_image}некорректно'
                 )
                 self.assertEqual(
