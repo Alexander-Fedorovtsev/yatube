@@ -82,13 +82,13 @@ class PostsViewTests(TestCase):
         Post.objects.bulk_create(
             [
                 Post(
-                text='test text ' + str(post),
-                author=cls.author,
-                group=cls.test_group,
-                image=SimpleUploadedFile(
-                    name='small.gif',
-                    content=small_gif,
-                    content_type='image/gif',
+                    text='test text ' + str(post),
+                    author=cls.author,
+                    group=cls.test_group,
+                    image=SimpleUploadedFile(
+                        name='small.gif',
+                        content=small_gif,
+                        content_type='image/gif',
                     )
                 )
                 for post in range(number_of_posts)

@@ -1,6 +1,9 @@
+"""Модуль с описанием view-функций, относящихся ко всему проекту.
+"""
 from http import HTTPStatus
 
 from django.shortcuts import render
+
 
 def page_not_found(request, exception):
     return render(
