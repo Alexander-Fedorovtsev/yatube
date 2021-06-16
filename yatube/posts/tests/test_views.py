@@ -31,11 +31,11 @@
 
 import shutil
 import tempfile
-import time
 
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -65,9 +65,6 @@ class PostsViewTests(TestCase):
         cls.notFollower = User.objects.create_user(
             username='TestNotFollowerUser'
         )
-        # Создаем временную папку для медиа-файлов;
-        # на момент теста медиа папка будет переопределена
-        # settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -82,17 +79,21 @@ class PostsViewTests(TestCase):
             group=cls.test_group_another,
         )
         number_of_posts = 14
-        for post in range(number_of_posts):
-            Post.objects.create(
+        Post.objects.bulk_create(
+            [
+                Post(
                 text='test text ' + str(post),
                 author=cls.author,
                 group=cls.test_group,
                 image=SimpleUploadedFile(
                     name='small.gif',
                     content=small_gif,
-                    content_type='image/gif'
-                ),
-            )
+                    content_type='image/gif',
+                    )
+                )
+                for post in range(number_of_posts)
+            ]
+        )
         cls.context_test = {
             'text': 'test text 13',
             'author': cls.author,
@@ -102,17 +103,15 @@ class PostsViewTests(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # Метод shutil.rmtree удаляет директорию и всё её содержимое
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
 
     def setUp(self):
+        cache.clear()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.author)
-
         self.authorized_client_follower = Client()
         self.authorized_client_follower.force_login(self.follower)
-
         self.authorized_client_notfollower = Client()
         self.authorized_client_notfollower.force_login(self.notFollower)
 
@@ -390,23 +389,23 @@ class PostsViewTests(TestCase):
     def test_posts_index_cache(self):
         """Функция проверяет работу кеша на главной странице.
         """
-        response = self.authorized_client.get(reverse('index'))
+        initial_response = self.authorized_client.get(reverse('index'))
         Post.objects.create(
             text='test cache',
             author=self.author,
         )
-        response2 = self.authorized_client.get(reverse('index'))
-        time.sleep(20)
-        response3 = self.authorized_client.get(reverse('index'))
+        cached_response = self.authorized_client.get(reverse('index'))
+        cache.clear()
+        uncached_response = self.authorized_client.get(reverse('index'))
 
         self.assertEqual(
-            response.content,
-            response2.content,
+            initial_response.content,
+            cached_response.content,
             'Контент страницы изменился за время менее времени кэширования'
         )
         self.assertNotEqual(
-            response3.content,
-            response.content,
+            uncached_response.content,
+            initial_response.content,
             'Кэширование работает некоректно'
         )
 
@@ -415,7 +414,7 @@ class PostsViewTests(TestCase):
         подписываться на других пользователей.
 
         """
-        self.authorized_client_follower.post(
+        self.authorized_client_follower.get(
             reverse(
                 'profile_follow',
                 kwargs={
@@ -433,7 +432,7 @@ class PostsViewTests(TestCase):
         """Функция проверяет, что авторизованный пользователь может
         удалять других пользователей их из подписок.
         """
-        self.authorized_client_follower.post(
+        self.authorized_client_follower.get(
             reverse(
                 'profile_follow',
                 kwargs={
@@ -441,7 +440,7 @@ class PostsViewTests(TestCase):
                 }
             )
         )
-        self.authorized_client_follower.post(
+        self.authorized_client_follower.get(
             reverse(
                 'profile_unfollow',
                 kwargs={
@@ -466,7 +465,7 @@ class PostsViewTests(TestCase):
         3 проверяем что пост есть в ленте TestFollowerUser
         4 проверяем что поста нет в ленте 'TestNotFollowerUser'
         """
-        self.authorized_client_follower.post(
+        self.authorized_client_follower.get(
             reverse(
                 'profile_follow',
                 kwargs={
@@ -477,6 +476,7 @@ class PostsViewTests(TestCase):
         form_data = {
             'text': 'test text for test feed foolowers',
             'group': self.test_group.id,
+            'image': '',
         }
         expected = {
             **form_data,
@@ -495,7 +495,6 @@ class PostsViewTests(TestCase):
         response_not_follower = self.authorized_client_notfollower.get(
             reverse('follow_index')
         )
-        del response_follower[0]['image']
 
         self.assertDictEqual(
             response_follower[0],

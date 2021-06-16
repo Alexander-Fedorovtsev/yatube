@@ -17,9 +17,9 @@ class AboutURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.page_status_template = (
-            ('/about/', HTTPStatus.OK, 'about/project.html'),
-            ('/about/author/', HTTPStatus.OK, 'about/about.html'),
-            ('/about/tech/', HTTPStatus.OK, 'about/tech.html'),
+            ('/about/', 'about/project.html'),
+            ('/about/author/', 'about/about.html'),
+            ('/about/tech/', 'about/tech.html'),
         )
 
     def setUp(self):
@@ -29,13 +29,13 @@ class AboutURLTests(TestCase):
         """Функция проверяет доступность адресов /about/author/ и
         /about/tech/ для неавторизованного пользователя.
         """
-        for page, status, _ in self.page_status_template:
-            with self.subTest(page=page, status=status):
+        for page, _ in self.page_status_template:
+            with self.subTest(page=page):
                 response = self.guest_client.get(page)
 
                 self.assertEqual(
                     response.status_code,
-                    status,
+                    HTTPStatus.OK,
                     f'Ошибка доступа к странице {page}'
                 )
 
@@ -43,7 +43,7 @@ class AboutURLTests(TestCase):
         """Функция проверяет, что для отображения страниц /about/author/
         и /about/tech/ применяются ожидаемые шаблоны.
         """
-        for page, _, template in self.page_status_template:
+        for page, template in self.page_status_template:
             with self.subTest(page=page, template=template):
                 response = self.guest_client.get(page)
 

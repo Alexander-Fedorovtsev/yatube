@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sorl.thumbnail',
-    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -57,7 +56,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'yatube.urls'
@@ -148,7 +146,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 # Login
-
 LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
@@ -158,31 +155,9 @@ EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 # указываем директорию, в которую будут складываться файлы писем
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
 
-# if DEBUG:
-#     ALLOWED_HOSTS = '*'
-
-#     LOGGING = {
-#         'version': 1,
-#         'disable_existing_loggers': False,
-#         'handlers': {
-#             'console': {
-#                 'class': 'logging.StreamHandler',
-#             },
-#         },
-#         'root': {
-#             'handlers': ['console'],
-#             'level': 'WARNING',
-#         },
-#         'loggers': {
-#             'django.db': {
-#                 'handlers': ['console'],
-#                 'level': os.getenv('DJANGO_LOG_LEVEL', default='DEBUG'),
-#                 'propagate': False,
-#             },
-#         },
-#     }
-INTERNAL_IPS = [
-    # ...
-    '127.0.0.1',
-    # ...
-]
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar' )
+    MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+    INTERNAL_IPS = [
+        '127.0.0.1',
+    ]

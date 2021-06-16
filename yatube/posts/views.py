@@ -1,6 +1,5 @@
 """Модуль с описанием view-функций приложения posts.
 """
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -71,14 +70,18 @@ def _get_author_info(username):
     }
 
 
-@login_required
 def _check_follow(request, user_author):
     """Функция для проверки подписки на автора.
     """
-    if user_author.following.filter(user=request.user).exists():
-        return True
-    else:
-        return False
+    return user_author.following.filter(user=request.user).exists()
+
+
+def _add_context_following_auth_user(request, context, author):
+    """Функция добавляет в словарь контекста context ключ following для
+    авторизованного пользователя.
+    """
+    if request.user.is_authenticated:
+        context['following'] = _check_follow(request, author)
 
 
 @require_GET
@@ -91,20 +94,11 @@ def profile(request, username):
         **author_info,
         **_all_posts(request, post_list),
     }
-
-    if not request.user.is_authenticated:
-        return render(
-            request,
-            'posts/profile.html',
-            context,
-        )
+    _add_context_following_auth_user(request, context, author_info['author'])
     return render(
         request,
         'posts/profile.html',
-        {
-            **context,
-            'following': _check_follow(request, author_info['author']),
-        },
+        context,
     )
 
 
@@ -123,15 +117,7 @@ def post_view(request, username, post_id):
         'form': form,
         'comments': comments,
     }
-    if request.user.is_authenticated:
-        return render(
-            request,
-            'posts/post.html',
-            {
-                **context,
-                'following': _check_follow(request, author_info['author']),
-            },
-        )
+    _add_context_following_auth_user(request, context, author_info['author'])
     return render(
         request,
         'posts/post.html',
@@ -192,25 +178,6 @@ def post_edit(request, username, post_id):
     )
 
 
-def page_not_found(request, exception):
-    return render(
-        request,
-        'misc/404.html',
-        {
-            'path': request.path
-        },
-        status=404,
-    )
-
-
-def server_error(request):
-    return render(
-        request,
-        'misc/500.html',
-        status=500,
-    )
-
-
 @require_http_methods(["GET", "POST"])
 @login_required
 def add_comment(request, username, post_id):
@@ -248,44 +215,46 @@ def follow_index(request):
     )
 
 
-def _redirect_follow(request, username, action):
+def _redirect_follow(request, username, follow):
     """Функция для реализации подписики и отписки от автора.
+    Для подписки follow=True, отписка follow=False.
     """
     author_follow = get_object_or_404(User, username=username)
-    user_follower = get_object_or_404(User, username=request.user.username)
     path_to_follow = redirect(
         'profile',
         username=username,
     )
-    if author_follow == user_follower:
+    if author_follow == request.user:
         return path_to_follow
     check_following = _check_follow(request, author_follow)
-    if not check_following and action == 'add':
+    if not check_following and follow:
         Follow.objects.create(
             author=author_follow,
-            user=user_follower,
+            user=request.user,
         )
         return path_to_follow
-    elif check_following and action == 'del':
+    elif check_following and not follow:
         Follow.objects.get(
-            user=user_follower,
+            user=request.user,
             author=author_follow,
         ).delete()
         return path_to_follow
     return path_to_follow
 
 
+@require_GET
 @login_required
 def profile_follow(request, username):
     """View-функция для добавления подписки на автора. Видна только
     авторизованным пользователям.
     """
-    return _redirect_follow(request, username, 'add')
+    return _redirect_follow(request, username, True)
 
 
+@require_GET
 @login_required
 def profile_unfollow(request, username):
     """View-функция для удаления подписки на автора. Видна только
     авторизованным пользователям.
     """
-    return _redirect_follow(request, username, 'del')
+    return _redirect_follow(request, username, False)
