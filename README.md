@@ -18,10 +18,10 @@
 ### Установка и запуск проекта:
 1. Клонировать репозиторий и перейти в него в командной строке:
 ```
-git clone https://github.com/SvetlanaLogvinova88/hw05_final.git
+git clone https://github.com/SvetlanaLogvinova88/YaTube.git
 ```
 ```
-cd hw05_final
+cd yatube
 ```
 
 2. Cоздать и активировать виртуальное окружение:
